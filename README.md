@@ -1,2 +1,2 @@
 # arduino-projects
-my arduino projects
+A collection of my arduino projects.
