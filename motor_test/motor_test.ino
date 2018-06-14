@@ -16,7 +16,6 @@ void setup() {
   digitalWrite(in1, LOW);
   digitalWrite(in2, HIGH);
 
-  Serial.begin(9600);
   Serial.println("serial monitor working");
 }
 
