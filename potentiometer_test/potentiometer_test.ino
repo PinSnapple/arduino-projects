@@ -1,3 +1,5 @@
+// must connect potentiometer to analog pins.
+
 int potPin = 2;
 int potVal = 0;
 
