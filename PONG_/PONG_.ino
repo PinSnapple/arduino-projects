@@ -100,12 +100,14 @@ void ballPosition() {
   // check if the current location is different than the previous
   if (xPos != xPrev || yPos != yPrev) {
     myScreen.stroke(0,0,0); // set the stroke color to black 
-    myScreen.point(xPrev, yPrev); // color in the previous point 
+    myScreen.fill(0,0,0); // set the fill color to black
+    myScreen.rect(xPrev, yPrev, 3, 3); // color in the previous ball 
   }
 
-  // draw a point in the current location
+  // draw the ball in the current location
   myScreen.stroke(255,255,255);
-  myScreen.point(xPos, yPos);
+  myScreen.fill(255, 255, 255); 
+  myScreen.rect(xPos, yPos, 3, 3);
   
   // update the point's previous location
   xPrev=xPos;
