@@ -5,6 +5,16 @@
 #define DC 9
 #define RESET 8
 
+#define SPEED 4
+
+// keep track of each player's score
+int player1 = 0;
+int oldPlayer1;
+char player1Score[4];
+int player2 = 0;
+int oldPlayer2;
+char player2Score[4];
+
 // joysticks
 int potPin1 = 2;
 int potVal1 = 0;
@@ -12,6 +22,8 @@ int potPin2 = 5;
 int potVal2 = 0;
 
 int randNumber;
+
+bool goalScored = false;
 
 TFT myScreen = TFT(CS, DC, RESET);
 // screen width goes from 0 to 160
@@ -30,7 +42,7 @@ int xPrev = xPos;
 int yPrev = yPos;
 
 // vars for paddle locations
-int xPaddlePosition1 = 5;
+int xPaddlePosition1 = 4;
 int xPaddlePosition2 = 152;
 int yPaddlePosition1;
 int yPaddlePosition2;
@@ -47,14 +59,39 @@ void setup() {
   
   // for debugging
   Serial.begin(9600);
-  
-  Serial.print("screen width: ");
-  Serial.println(screenWidth);
-  Serial.print("screen height: ");
-  Serial.println(screenHeight);
+
+  beginPong();
+}
+
+void beginPong() {
+  Serial.println("start!");
+  Serial.println("player1 scores: ");
+  Serial.println(player1);
+  Serial.println("player2 scores: ");
+  Serial.println(player2);
   
   myScreen.begin();
   myScreen.background(0,0,0); // clear the screen
+
+  // starting screen
+  myScreen.stroke(255,0,255);
+  myScreen.setTextSize(5);
+  myScreen.text("PONG", 23, 45);
+  delay(1000);
+  myScreen.background(0,0,0); // clear the screen
+  delay(500);
+
+  // draw division line
+  myScreen.stroke(255,0,0);
+  myScreen.line(80,0,80,128);
+
+  // draw score
+  myScreen.stroke(255,0,255);
+  myScreen.setTextSize(2);
+  String(player1).toCharArray(player1Score,4);
+  myScreen.text(player1Score,50,0);
+  String(player2).toCharArray(player2Score,4);
+  myScreen.text(player2Score,102,0);
 
   // draw the pong paddles
   potVal1 = analogRead(potPin1);
@@ -77,22 +114,23 @@ void setup() {
   randNumber = random(2);
 
   if (randNumber == 1) {
-    xDir = 1;
+    xDir = SPEED;
   } else {
-    xDir = -1;
+    xDir = -SPEED;
   }
 
   // randomly decide the direction of the ball (y-direction)
   randNumber = random(2);
   
   if (randNumber == 1) {
-    yDir = 1;
+    yDir = SPEED;
   } else {
-    yDir = -1;
+    yDir = -SPEED;
   }
 }
 
-void ballPosition() {
+void ballPosition() { 
+  
   // update the location of the ball
   xPos = xPos + xDir;
   yPos = yPos + yDir;
@@ -157,21 +195,126 @@ void paddle2Position() {
 void checkForCollision() {
   
   // if the y position of the ball is at the screen edge, reverse direction
-  if (yPos >= 128 || yPos <= 0) {
+  if (yPos >= 125 || yPos <= 0) {
     yDir = yDir*-1;
   }
 
   // if the x and y position of the ball is the same as a paddle1, reverse direction
-  if (xPos == xPaddlePosition1 && (yPaddlePosition1 <= yPos && yPos <= (yPaddlePosition1 + 20))) {
+  if (xPos == xPaddlePosition1 && ((yPaddlePosition1-3) <= yPos && yPos <= (yPaddlePosition1 + 20))) {
     xDir = xDir*-1;
     yDir = yDir*-1;
   }
 
   // if the x and y position of the ball is the same as a paddle2, reverse direction
-  if (xPos == xPaddlePosition2 && (yPaddlePosition2 <= yPos && yPos <= (yPaddlePosition2 + 20))) {
+  if (xPos == xPaddlePosition2 && ((yPaddlePosition2-3) <= yPos && yPos <= (yPaddlePosition2 + 20))) {
     xDir = xDir*-1;
     yDir = yDir*-1;
   }
+}
+
+void updateScore() {
+  // erase old score
+  myScreen.stroke(0,0,0); // set black
+  myScreen.setTextSize(2);
+  String(oldPlayer1).toCharArray(player1Score,4);
+  myScreen.text(player1Score,50,0);
+  String(oldPlayer2).toCharArray(player2Score,4);
+  myScreen.text(player2Score,102,0);
+  
+  // draw score
+  myScreen.stroke(255,0,255);
+  myScreen.setTextSize(2);
+  String(player1).toCharArray(player1Score,4);
+  myScreen.text(player1Score,50,0);
+  String(player2).toCharArray(player2Score,4);
+  myScreen.text(player2Score,102,0);
+
+    // draw division line
+  myScreen.stroke(255,0,0);
+  myScreen.line(80,0,80,128);
+}
+
+void newRound() {
+
+  xPos = 80;
+  yPos = 64;
+
+  // randomly decide the direction of the ball (x-direction)
+  randNumber = random(2);
+
+  if (randNumber == 1) {
+    xDir = SPEED;
+  } else {
+    xDir = -SPEED;
+  }
+
+  // randomly decide the direction of the ball (y-direction)
+  randNumber = random(2);
+  
+  if (randNumber == 1) {
+    yDir = SPEED;
+  } else {
+    yDir = -SPEED;
+  }
+}
+
+void checkForGoal() {
+  if (xPos < 0) {
+    oldPlayer1 = player1;
+    player1 = player1+1;
+    goalScored = true;
+  } else if (xPos > 160) {
+    oldPlayer2 = player2;
+    player2 = player2+1;
+    goalScored = true;
+  }
+
+  if (goalScored) {
+    if (player1 >= 5 || player2 >= 5) {
+      gameOver();
+    } else {
+      newRound();
+    }
+  }
+  goalScored = false;
+}
+
+void gameOver() {
+  Serial.println("game over!");
+  if (player1 >= 5) {
+    myScreen.background(0,0,0); // clear the screen
+    myScreen.stroke(255,0,255);
+    myScreen.setTextSize(2);
+    myScreen.text("Player1 Wins!", 4, 45);
+    delay(1000);
+    myScreen.background(0,0,0); // clear the screen
+    delay(500);
+  } else {
+    myScreen.background(0,0,0); // clear the screen
+    myScreen.stroke(255,0,255);
+    myScreen.setTextSize(3);
+    myScreen.text("Player2 Wins!", 4, 45);
+    delay(1000);
+    myScreen.background(0,0,0); // clear the screen
+    delay(500);
+  }
+  
+  // ball starts in the middle of the screen
+  xPos = 80;
+  yPos = 64;
+  
+  // keep track of each player's score
+  player1 = 0;
+  oldPlayer1 = 0;
+  player1Score[4];
+  player2 = 0;
+  oldPlayer2 = 0;
+    
+  // vars to keep track of the point's location
+  xPrev = xPos;
+  yPrev = yPos;
+
+  beginPong();
 }
 
 void loop() {
@@ -179,6 +322,9 @@ void loop() {
   paddle1Position();
   paddle2Position();
   checkForCollision();
+  checkForGoal();
+  updateScore();
+  
   // a 33ms delay means the screen updates 30 times a second
   delay(33);
 }
